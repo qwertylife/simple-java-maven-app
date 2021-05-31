@@ -1,29 +1,29 @@
-pipeline {
-    agent any
+def isMasterBranch = env.BRANCH_NAME == "master"
+def isDevBranch = env.BRANCH_NAME == "dev"
+def isfixBranch = env.BRANCH_NAME == "fix"
 
-    tools{
-        maven 'Maven-3.8'
-    }
-
-    stages {
-        stage('Build') {
-            steps {
-                sh 'mvn install'
+pipeline{
+    agent any{
+        stages{
+            stage('Build'){
+                tools {
+                    maven 'Maven-3.8'
+                } 
+                buildDefinitionFile = "pom.xml"
             }
-        }
-        stage('Test') {
-            steps {
-                sh 'mvn test'
-            }
-            post {
-                always {
-                    junit 'target/surefire-reports/*.xml'
+            
+            stage('Publish') {
+                executeCreateArtifact = true
+                executePublishArtifact = (isMasterBranch || isDevBranch)
+                artifactoryRepo = "**/target/*.war"
+                publishMode = "FILE_SPEC"
                 }
             }
-        }
-        stage('Deliver') {
-            steps {
-                sh './jenkins/scripts/deliver.sh'
+
+            stage('Test'){
+                steps{
+                    sh 'mvn test'
+                }
             }
         }
     }
